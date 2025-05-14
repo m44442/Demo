@@ -3,12 +3,12 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Three.jsパーティクルノイズエフェクト</title>
+    <title>パーティクルノイズエフェクト</title>
     <style>
         body {
             margin: 0;
             overflow: hidden;
-            background-color: #000;
+            background-color: #ffffff; /* 背景を白に変更 */
         }
         canvas {
             display: block;
@@ -17,10 +17,10 @@
             position: absolute;
             top: 10px;
             left: 10px;
-            color: white;
+            color: black; /* テキスト色を黒に変更 */
             font-family: monospace;
             font-size: 12px;
-            background-color: rgba(0, 0, 0, 0.5);
+            background-color: rgba(255, 255, 255, 0.5); /* 背景色を白半透明に変更 */
             padding: 10px;
             border-radius: 5px;
         }
@@ -35,7 +35,7 @@
         // メインの変数
         let scene, camera, renderer;
         let particles;
-        let count = 15000;
+        let count = 10000; // パーティクル数を減らしてシンプルに
         let positions, velocities;
         let noise;
         let mouseX = 0, mouseY = 0;
@@ -44,10 +44,12 @@
         function init() {
             // シーン作成
             scene = new THREE.Scene();
+            scene.background = new THREE.Color(0xffffff); // 背景色を白に設定
             
-            // カメラ作成
+            // カメラ作成 - ホームページ背景に適した視点
             camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
-            camera.position.z = 50;
+            camera.position.z = 60;
+            camera.lookAt(0, 0, 0);
             
             // レンダラーの設定
             renderer = new THREE.WebGLRenderer({ antialias: true });
@@ -62,7 +64,6 @@
             
             // イベントリスナー
             window.addEventListener('resize', onWindowResize);
-            document.addEventListener('mousemove', onMouseMove);
             
             // アニメーション開始
             animate();
@@ -79,33 +80,116 @@
             const sizes = new Float32Array(count);
             const colors = new Float32Array(count * 3);
             
-            // パーティクルの初期化
+            // 先進的なデザインのパターンを作成
             for (let i = 0; i < count; i++) {
-                // インデックスの取得
                 const i3 = i * 3;
                 
-                // ランダムな位置を設定 (球体状に分布)
-                const radius = 30 * (0.5 + Math.random() * 0.5);
-                const theta = Math.random() * Math.PI * 2;
-                const phi = Math.random() * Math.PI;
+                // 基本的には全画面に広がるが、特定のパターンを持つ配置
+                let x, y, z;
                 
-                positions[i3] = radius * Math.sin(phi) * Math.cos(theta);
-                positions[i3 + 1] = radius * Math.sin(phi) * Math.sin(theta);
-                positions[i3 + 2] = radius * Math.cos(phi);
+                // パターン決定
+                const patternType = Math.random();
+                
+                if (patternType < 0.4) {
+                    // メインの平面的な配置 - 画面全体にやや広がる
+                    x = (Math.random() - 0.5) * 120;
+                    y = (Math.random() - 0.5) * 80;
+                    z = (Math.random() - 0.5) * 40;
+                    
+                    // 密度を調整 - 中心から遠いほど多く
+                    const distFromCenter = Math.sqrt(x*x + y*y);
+                    if (distFromCenter < 20 && Math.random() < 0.7) {
+                        // 中心付近は70%の確率で再配置
+                        const angle = Math.random() * Math.PI * 2;
+                        const newRadius = 20 + Math.random() * 40;
+                        x = newRadius * Math.cos(angle);
+                        y = newRadius * Math.sin(angle);
+                    }
+                    
+                } else if (patternType < 0.65) {
+                    // 格子状のパターン - 現代的な印象
+                    const gridSize = 10;
+                    const gridCount = 12;
+                    const halfGrid = gridCount * gridSize / 2;
+                    
+                    // 格子点の位置 + ランダムなずれ
+                    const gridX = Math.floor(Math.random() * gridCount);
+                    const gridY = Math.floor(Math.random() * gridCount);
+                    
+                    x = gridX * gridSize - halfGrid + (Math.random() - 0.5) * 3;
+                    y = gridY * gridSize - halfGrid + (Math.random() - 0.5) * 3;
+                    z = (Math.random() - 0.5) * 30;
+                    
+                } else if (patternType < 0.85) {
+                    // 曲線パターン - 複数の曲線が画面を横切る
+                    const curveType = Math.floor(Math.random() * 3);
+                    const t = Math.random();
+                    
+                    if (curveType === 0) {
+                        // サイン波
+                        x = (t * 2 - 1) * 60;
+                        y = Math.sin(t * Math.PI * 4) * 15;
+                        z = (Math.random() - 0.5) * 20 - 10;
+                    } else if (curveType === 1) {
+                        // 螺旋状
+                        const angle = t * Math.PI * 6;
+                        const radius = 5 + t * 30;
+                        x = radius * Math.cos(angle);
+                        y = radius * Math.sin(angle);
+                        z = (Math.random() - 0.5) * 20;
+                    } else {
+                        // 放物線
+                        x = (t * 2 - 1) * 60;
+                        y = Math.pow(t - 0.5, 2) * 60 - 15;
+                        z = (Math.random() - 0.5) * 20 + 10;
+                    }
+                    
+                    // 曲線上に正確にしすぎず、ランダム性を加える
+                    x += (Math.random() - 0.5) * 4;
+                    y += (Math.random() - 0.5) * 4;
+                    
+                } else {
+                    // 特殊パターン - 中央に向かう光線のような効果
+                    const angle = Math.random() * Math.PI * 2;
+                    const length = 20 + Math.random() * 60;
+                    
+                    // 中心から外側に向かう線
+                    x = Math.cos(angle) * length;
+                    y = Math.sin(angle) * length;
+                    z = (Math.random() - 0.5) * 30;
+                    
+                    // 線上にずらす
+                    const linePos = Math.random();
+                    x *= linePos;
+                    y *= linePos;
+                }
+                
+                // 位置を設定
+                positions[i3] = x;
+                positions[i3 + 1] = y;
+                positions[i3 + 2] = z;
                 
                 // 速度を初期化
                 velocities[i3] = 0;
                 velocities[i3 + 1] = 0;
                 velocities[i3 + 2] = 0;
                 
-                // サイズはランダム
-                sizes[i] = Math.random() * 2 + 0.5;
+                // サイズを小さく統一（背景用）
+                sizes[i] = Math.random() * 0.4 + 0.2;
                 
-                // 色を設定 (青から紫へのグラデーション)
-                const colorFactor = Math.random();
-                colors[i3] = 0.3 + 0.5 * colorFactor;     // R
-                colors[i3 + 1] = 0.3 + 0.2 * colorFactor; // G
-                colors[i3 + 2] = 0.8 + 0.2 * colorFactor; // B
+                // 色は黒の濃淡で（未来的な印象）
+                let grayScale;
+                
+                // 10%の確率でやや濃いめの粒子を配置
+                if (Math.random() < 0.1) {
+                    grayScale = 0.15 + 0.1 * Math.random();
+                } else {
+                    grayScale = 0.05 + 0.05 * Math.random();
+                }
+                
+                colors[i3] = grayScale;
+                colors[i3 + 1] = grayScale;
+                colors[i3 + 2] = grayScale;
             }
             
             // ジオメトリに属性を設定
@@ -113,14 +197,14 @@
             geometry.setAttribute('size', new THREE.BufferAttribute(sizes, 1));
             geometry.setAttribute('color', new THREE.BufferAttribute(colors, 3));
             
-            // マテリアルの作成
+            // マテリアルの作成 - 小さくシャープに
             const material = new THREE.PointsMaterial({
-                size: 0.5,
+                size: 0.3,
                 sizeAttenuation: true,
                 vertexColors: true,
                 transparent: true,
-                opacity: 0.8,
-                blending: THREE.AdditiveBlending
+                opacity: 0.7,
+                blending: THREE.NormalBlending
             });
             
             // パーティクルシステムの作成
@@ -141,40 +225,32 @@
                 let y = positionAttribute.array[i3 + 1];
                 let z = positionAttribute.array[i3 + 2];
                 
-                // 時間とノイズを使って位置を更新
-                const noiseScale = 0.02;
-                const timeScale = 0.1;
-                const noiseX = noise.noise3D(x * noiseScale, y * noiseScale, z * noiseScale + time * timeScale);
-                const noiseY = noise.noise3D(x * noiseScale + 100, y * noiseScale, z * noiseScale + time * timeScale);
-                const noiseZ = noise.noise3D(x * noiseScale, y * noiseScale + 100, z * noiseScale + time * timeScale);
-                
-                // マウスの影響を追加
-                const mouseInfluence = 0.01;
-                const distanceFactorX = (mouseX - x) * mouseInfluence;
-                const distanceFactorY = (mouseY - y) * mouseInfluence;
+                // 非常に微小な動き
+                const noiseScale = 0.003;
+                const timeScale = 0.01;
+                const noiseX = noise.noise3D(x * noiseScale, y * noiseScale, z * noiseScale + time * timeScale) * 0.01;
+                const noiseY = noise.noise3D(x * noiseScale + 100, y * noiseScale, z * noiseScale + time * timeScale) * 0.01;
+                const noiseZ = noise.noise3D(x * noiseScale, y * noiseScale + 100, z * noiseScale + time * timeScale) * 0.008;
                 
                 // 速度を更新
-                velocities[i3] += noiseX * 0.1 + distanceFactorX * 0.05;
-                velocities[i3 + 1] += noiseY * 0.1 + distanceFactorY * 0.05;
-                velocities[i3 + 2] += noiseZ * 0.1;
-                
-                // 速度を減衰
-                velocities[i3] *= 0.95;
-                velocities[i3 + 1] *= 0.95;
-                velocities[i3 + 2] *= 0.95;
+                velocities[i3] = noiseX;
+                velocities[i3 + 1] = noiseY;
+                velocities[i3 + 2] = noiseZ;
                 
                 // 位置を更新
                 positionAttribute.array[i3] += velocities[i3];
                 positionAttribute.array[i3 + 1] += velocities[i3 + 1];
                 positionAttribute.array[i3 + 2] += velocities[i3 + 2];
                 
-                // 中心からの距離が大きすぎる場合、反対側に引っ張る
-                const distance = Math.sqrt(x*x + y*y + z*z);
-                if (distance > 40) {
-                    // 中心方向への引力
-                    positionAttribute.array[i3] *= 0.99;
-                    positionAttribute.array[i3 + 1] *= 0.99;
-                    positionAttribute.array[i3 + 2] *= 0.99;
+                // 画面外に出たら反対側から入ってくるように
+                if (Math.abs(positionAttribute.array[i3]) > 80) {
+                    positionAttribute.array[i3] *= -0.95;
+                }
+                if (Math.abs(positionAttribute.array[i3+1]) > 60) {
+                    positionAttribute.array[i3+1] *= -0.95;
+                }
+                if (Math.abs(positionAttribute.array[i3+2]) > 50) {
+                    positionAttribute.array[i3+2] *= -0.95;
                 }
             }
             
@@ -189,9 +265,8 @@
             // パーティクルを更新
             updateParticles(performance.now() * 0.001);
             
-            // パーティクルシステムを回転
-            particles.rotation.y += 0.001;
-            particles.rotation.x += 0.0005;
+            // パーティクルシステムを非常にゆっくり回転（背景として控えめに）
+            particles.rotation.y += 0.0005;
             
             // レンダリング
             renderer.render(scene, camera);
